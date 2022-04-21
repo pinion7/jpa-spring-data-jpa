@@ -1,0 +1,8 @@
+package study.datajpa.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import study.datajpa.entity.Member;
+
+// JpaRepository<엔티티, pk_id> 넣음 됨
+public interface MemberRepository extends JpaRepository<Member, Long> {
+}
