@@ -22,7 +22,7 @@ class MemberJpaRepositoryTest {
     @Test
     void testMember() {
         // given
-        Member member = new Member("memberA");
+        Member member = new Member("memberA", 10);
         Member savedMember = memberJpaRepository.save(member);
 
         // when

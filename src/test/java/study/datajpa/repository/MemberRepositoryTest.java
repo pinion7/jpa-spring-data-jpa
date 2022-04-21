@@ -22,7 +22,7 @@ class MemberRepositoryTest {
     @Test
     void testMember() {
         // given
-        Member member = new Member("memberA");
+        Member member = new Member("memberA", 15);
         Member savedMember = memberRepository.save(member);
 
         // when
