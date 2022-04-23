@@ -8,6 +8,11 @@ import javax.persistence.*;
 @Getter @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @ToString(of = {"id", "username", "age"}) // 객체 찍을때 바로 출력이 되는 것? (연관관계필드는 toString 하면 무한루프돌수있음)
+@NamedQuery(
+        name="Member.findByUser",
+        query="select m from Member m where m.username = :username"
+) // NamedQuery는 실무에서는 안쓰는 기능이지만 소개
+@NamedEntityGraph(name = "Member.all", attributeNodes = @NamedAttributeNode("team")) // 얘도 실무에서 안쓰지만 존재한다는 것 참고
 public class Member {
 
     @Id @GeneratedValue
