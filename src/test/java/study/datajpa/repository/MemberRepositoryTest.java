@@ -16,6 +16,7 @@ import study.datajpa.entity.Team;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.PrePersist;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -27,8 +28,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Rollback(false)
 class MemberRepositoryTest {
 
-    @Autowired MemberRepository memberRepository;
-    @Autowired TeamRepository teamRepository;
+    @Autowired
+    MemberRepository memberRepository;
+    @Autowired
+    TeamRepository teamRepository;
     @PersistenceContext
     EntityManager em;
 
@@ -103,7 +106,7 @@ class MemberRepositoryTest {
         assertThat(members.get(0).getAge()).isEqualTo(20);
         assertThat(members.size()).isEqualTo(1);
     }
-    
+
     @Test
     @DisplayName("2-2. 스프링 데이터 JPA - 이름 따라 쿼리생성하는 쿼리 메소드 선언 및 사용2")
     void findHellBy() {
@@ -183,7 +186,7 @@ class MemberRepositoryTest {
         // given
         Team team = new Team("teamA");
         teamRepository.save(team);
-        
+
         Member member1 = new Member("AAA", 10, team);
         Member member2 = new Member("BBB", 20, team);
         memberRepository.save(member1);
@@ -358,6 +361,7 @@ class MemberRepositoryTest {
     }
 
     @Test
+    @DisplayName("8. 스프링 데이터 JPA - @EntityGraph")
     void findMemberLazy() {
         // given
         Team teamA = new Team("teamA");
@@ -368,10 +372,10 @@ class MemberRepositoryTest {
         Member member2 = new Member("member2", 10, teamB);
         memberRepository.save(member1);
         memberRepository.save(member2);
-        
+
         em.flush();
         em.clear();
-        
+
         // when
         // 지연로딩 방식으로 인해, N + 1 문제가 발생함
 //        List<Member> members = memberRepository.findAll(); // @EntityGraph 적용 전 일때!
@@ -397,6 +401,7 @@ class MemberRepositoryTest {
     }
 
     @Test
+    @DisplayName("9-1. 스프링 데이터 JPA - JPA Hint")
     void queryHint() {
         // given
         Member member1 = memberRepository.save(new Member("member1", 10));
@@ -414,6 +419,7 @@ class MemberRepositoryTest {
 
 
     @Test
+    @DisplayName("9-2. 스프링 데이터 JPA - JPA Lock")
     void lock() {
         // given
         memberRepository.save(new Member("member1", 10));
@@ -426,4 +432,39 @@ class MemberRepositoryTest {
     }
 
 
+    @Test
+    @DisplayName("10. 스프링 데이터 JPA - 사용자 정의 레포지터리")
+    void callCustom() {
+        // given
+        List<Member> result = memberRepository.findMemberCustom();
+
+        // when
+
+        //then
+    }
+
+    @Test
+    @DisplayName("11. 스프링 데이터 JPA - Auditing")
+    void jpaEventBaseEntity() throws InterruptedException {
+        // given
+        Member member = new Member("member1", 10);
+        memberRepository.save(member); // @PrePersist 적용 시점
+
+        Thread.sleep(100);
+        member.setUsername("member2");
+
+        em.flush(); //@PreUpdate 적용 시점
+        em.clear();
+
+        // when
+        Member findMember = memberRepository.findById(member.getId()).get();
+
+        //then
+        System.out.println("findMember.createdDate = " + findMember.getCreatedDate());
+//        System.out.println("findMember.updatedDate = " + findMember.getUpdatedDate()); // JpaBaseEntity 방식
+        System.out.println("findMember.lastModifiedDate = " + findMember.getLastModifiedDate()); // BaseEntity 방식
+        System.out.println("findMember.createdBy = " + findMember.getCreatedBy()); // BaseEntity 방식
+        System.out.println("findMember.lastModifiedBy = " + findMember.getLastModifiedBy()); // BaseEntity 방식
+
+    }
 }

@@ -13,7 +13,7 @@ import javax.persistence.*;
         query="select m from Member m where m.username = :username"
 ) // NamedQuery는 실무에서는 안쓰는 기능이지만 소개
 @NamedEntityGraph(name = "Member.all", attributeNodes = @NamedAttributeNode("team")) // 얘도 실무에서 안쓰지만 존재한다는 것 참고
-public class Member {
+public class Member extends BaseEntity {
 
     @Id @GeneratedValue
     @Column(name = "member_id")

@@ -13,8 +13,23 @@ import javax.persistence.QueryHint;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * 스프링 데이터 JPA 리포지토리는 인터페이스만 정의하고 구현체는 스프링이 자동 생성
+ * 스프링 데이터 JPA가 제공하는 인터페이스를 직접 구현하면 구현해야 하는 기능이 너무 많음
+ * 아래처럼 다양한 이유로 인터페이스의 메서드를 직접 구현하고 싶다면?
+ *      - JPA 직접 사용( EntityManager )
+ *      - 스프링 JDBC Template 사용
+ *      - MyBatis 사용
+ *      - 데이터베이스 커넥션 직접 사용 등등...
+ *      - Querydsl 사용
+ * extends 뒤에 사용자 정의 커스텀 interface를 하나 만들어서 추가하면 됨. (여기에선 MemberRepositoryCustom 인터페이스가 해당)
+ * 구현체는 따로 이 커스텀 인터페이스를 상속받은 클래스를 생성하여 구현 (여기에선 MemberRepositoryImpl 클래스에 해당)
+ * 대신 구현체 이름 짓는 규칙이 있음 JpaRepository를 상속받은 인터페이스의 이름에 Impl을 붙여서 지어야함.
+ * 즉, Jpa레포의 인터페이스가 MemberRepository 라면, 사용자 정의 구현체 이름은 MemberRepositoryImpl 이어야 함.
+ * (신기한건 구현체는 위와 같은 규칙을 따라야 하지만, 사용자 정의 커스텀 interface 이름은 아무렇게나 지어도 됨!)
+ */
 // JpaRepository<엔티티, pk_id의 타입> 넣음 됨
-public interface MemberRepository extends JpaRepository<Member, Long> {
+public interface MemberRepository extends JpaRepository<Member, Long>, MemberRepositoryCustom {
 
     /**
      * 1. 메소드 이름으로 쿼리 생성
