@@ -57,7 +57,7 @@ public class MemberController {
     }
 
     // 데이터가 없어서 일단 'web확장 - 도메인 클래스 컨버터' 테스트를 위해 하나 넣어두겠음
-    @PostConstruct
+//    @PostConstruct
     public void init() {
 //        memberRepository.save(new Member("userA", 10);
         for (int i = 0; i < 100; i++) {
