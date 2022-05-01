@@ -1,5 +1,8 @@
 package study.datajpa.repository;
 
+import org.assertj.core.api.Assertions;
+import org.hibernate.query.NativeQuery;
+import org.hibernate.transform.Transformers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -466,5 +469,91 @@ class MemberRepositoryTest {
         System.out.println("findMember.createdBy = " + findMember.getCreatedBy()); // BaseEntity 방식
         System.out.println("findMember.lastModifiedBy = " + findMember.getLastModifiedBy()); // BaseEntity 방식
 
+    }
+
+    @Test
+    @DisplayName("12. 스프링 데이터 JPA - Projection")
+    public void projections() throws Exception {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        //when
+
+        // 인터페이스 기반 Closed Projections - 사용 가능
+        List<UsernameOnly> result = memberRepository.findProjectionsByUsername("m1");
+
+        // 인터페이스 기반 Open Proejctions - 사용 어려움
+        // SpEL문법을 사용하기 때문에, DB에서 엔티티 필드를 다 조회해온 다음에 계산한다! 따라서 JPQL SELECT 절 최적화가 안된다.
+//        List<UsernameOnly> result = memberRepository.findProjectionsByUsername("m1");
+
+        // 클래스 기반 Projections - 사용 가능
+        List<UsernameOnlyDto> result2 = memberRepository.findProjectionsWithDtoByUsername("m1");
+
+        // 동적 Projections - 사용 가능
+        List<UsernameOnly> result3 = memberRepository.findProjectionsByUsername("m1", UsernameOnly.class);
+
+        // 중첩구조 Projections - 사용 어려움
+        // 중첩 외부(root)는 projection 인터페이스에 명시된 것만 가져오지만
+        // 중첩 내부는 projection 적용이 안되고 다불러온다는 단점이 있음!
+        List<NestedClosedProjections> result4 = memberRepository.findProjectionsByUsername("m1", NestedClosedProjections.class);
+
+        //then
+        Assertions.assertThat(result.size()).isEqualTo(1);
+        Assertions.assertThat(result2.size()).isEqualTo(1);
+        Assertions.assertThat(result3.size()).isEqualTo(1);
+        Assertions.assertThat(result4.size()).isEqualTo(1);
+    }
+
+
+    @Test
+    @DisplayName("13. 스프링 데이터 JPA - Native Query")
+    void nativeQuery() {
+        //given
+        Team teamA = new Team("teamA");
+        em.persist(teamA);
+
+        Member m1 = new Member("m1", 0, teamA);
+        Member m2 = new Member("m2", 0, teamA);
+        em.persist(m1);
+        em.persist(m2);
+
+        em.flush();
+        em.clear();
+
+        //when
+        // 네이티브 쿼리 only
+        Member result = memberRepository.findByNativeQuery("m1");
+        System.out.println("result = " + result);
+
+        // 네이티브 쿼리 + Projections를 함께 활용 (+ Dto도 만들어서 적용)
+        Page<MemberProjection> result2 = memberRepository.findByNativeProjection(PageRequest.of(0, 10));
+        List<MemberProjection> content = result2.getContent();
+        for (MemberProjection memberProjection : content) {
+            System.out.println("memberProjection = " + memberProjection.getUsername());
+            System.out.println("memberProjection = " + memberProjection.getTeamname());
+        }
+
+        // 동적 네이티브 쿼리 (하이버네이트를 직접 활용)
+//        String sql = "select m.username as username from member m";
+//        List<MemberDto> result3 = em.createNativeQuery(sql)
+//                .setFirstResult(0)
+//                .setMaxResults(10)
+//                .unwrap(NativeQuery.class)
+//                .addScalar("username")
+//                .setResultTransformer(Transformers.aliasToBean(MemberDto.class))
+//                .getResultList();
+//        for (MemberDto memberDto : result3) {
+//            System.out.println("memberDto = " + memberDto.getUsername());
+//            System.out.println("memberDto = " + memberDto.getTeamName());
+//        }
     }
 }

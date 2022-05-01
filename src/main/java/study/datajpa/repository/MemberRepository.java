@@ -231,6 +231,76 @@ public interface MemberRepository extends JpaRepository<Member, Long>, MemberRep
     // select for update
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Member> findLockByUsername(String username);
+
+
+    /**
+     * 9. Projection
+     * 주의
+     *  - 프로젝션 대상이 root 엔티티면, JPQL SELECT 절 최적화 가능 프로젝션 대상이 ROOT가 아니면
+     *  - LEFT OUTER JOIN 처리
+     *  - 모든 필드를 SELECT해서 엔티티로 조회한 다음에 계산
+     *
+     * 정리
+     *  - 프로젝션 대상이 root 엔티티면 유용하다.
+     *  - 프로젝션 대상이 root 엔티티를 넘어가면 JPQL SELECT 최적화가 안된다! 실무의 복잡한 쿼리를 해결하기에는 한계가 있다.
+     *  - 실무에서는 단순할 때만 사용하고, 조금만 복잡해지면 QueryDSL을 사용하자
+     */
+    // 1) 인터페이스 기반 Closed Projections
+    // 프로퍼티 형식(getter)의 인터페이스를 제공하면, 구현체는 스프링 데이터 JPA가 제공
+    List<UsernameOnly> findProjectionsByUsername(String username);
+
+    // 3) 클래스 기반 Projection
+    // 다음과 같이 인터페이스가 아닌 구체적인 DTO 형식도 가능 생성자의 파라미터 이름으로 매칭
+    List<UsernameOnlyDto> findProjectionsWithDtoByUsername(String username);
+
+    // 4) 동적 Projections
+    // 다음과 같이 Generic type을 주면, 동적으로 프로젝션 데이터 번경 가능
+    <T> List<T> findProjectionsByUsername(String username, Class<T> type);
+
+
+    /**
+     * 10. Native Query
+     * 가급적 네이티브 쿼리는 사용하지 않는게 좋음, 정말 어쩔 수 없을 때 사용
+     * 최근에 나온 궁극의 방법 -> 스프링 데이터 Projections 활용
+     *
+     * 1) 스프링 데이터 JPA 기반 네이티브 쿼리
+     *  - 페이징 지원
+     *  - 반환 타입
+     *      - Object[]
+     *      - Tuple
+     *      - DTO(스프링 데이터 인터페이스 Projections 지원)
+     *  - 제약
+     *      - Sort 파라미터를 통한 정렬이 정상 동작하지 않을 수 있음(믿지 말고 직접 처리)
+     *      - JPQL처럼 애플리케이션 로딩 시점에 문법 확인 불가
+     *      - 동적 쿼리 불가
+     *  - JPQL은 위치 기반 파리미터를 1부터 시작하지만 네이티브 SQL은 0부터 시작
+     *  - 네이티브 SQL을 엔티티가 아닌 DTO로 변환은 하려면
+     *      - DTO 대신 JPA TUPLE 조회
+     *      - DTO 대신 MAP 조회
+     *      - @SqlResultSetMapping -> 복잡
+     *      - Hibernate ResultTransformer를 사용해야함 -> 복잡
+     *      - https://vladmihalcea.com/the-best-way-to-map-a-projection-query-to-a-dto-with-jpa- and-hibernate/
+     *      - 네이티브 SQL을 DTO로 조회할 때는 JdbcTemplate or myBatis 권장
+     *
+     * 2) Projections를 함께 활용
+     *  - 예) 스프링 데이터 JPA 네이티브 쿼리 + 인터페이스 기반 Projections 활용
+     *
+     * 3) 동적 네이티브 쿼리
+     *  - 하이버네이트를 직접 활용
+     *  - 스프링 JdbcTemplate, myBatis, jooq같은 외부 라이브러리 사용
+     */
+    // 1) 네이티브 쿼리 only
+    @Query(value = "select * from member where username = ?", nativeQuery = true)
+    Member findByNativeQuery(String username);
+
+    // 2) 네이티브 쿼리 + Projections를 함께 활용 (+ Dto도 만들어서 적용)
+    @Query(value = "select m.member_id as id, m.username, t.name as teamName " + "from member m left join team t",
+            countQuery = "select count(*) from member",
+            nativeQuery = true)
+    Page<MemberProjection> findByNativeProjection(Pageable pageable);
+
+    // 3) 동적 네이티브 쿼리 (하이버네이트를 직접 활용)
+
 }
 
 
